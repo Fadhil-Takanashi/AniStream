@@ -9,48 +9,43 @@ const anistreamDB = window.supabase.createClient(
   SUPABASE_PUBLISHABLE_KEY
 );
 
+/* ===== PESAN ANIStream ===== */
+
 function showMessage(message) {
   const toast = document.getElementById("toast");
-
   if (!toast) return;
 
   toast.textContent = message;
   toast.classList.add("show");
 
   clearTimeout(window.toastTimer);
-
   window.toastTimer = setTimeout(() => {
     toast.classList.remove("show");
   }, 2500);
 }
 
-// Fitur pencarian anime
+/* ===== PENCARIAN ANIME ===== */
+
 function searchAnime() {
-  const searchInput = document.getElementById("search");
-  const animeCards = document.querySelectorAll(".anime-card");
+  const input = document.getElementById("search");
+  const cards = document.querySelectorAll(".anime-card");
 
-  if (!searchInput) return;
+  if (!input) return;
 
-  const keyword = searchInput.value
-    .trim()
-    .toLowerCase();
-
+  const keyword = input.value.trim().toLowerCase();
   let visibleCount = 0;
 
-  animeCards.forEach((card) => {
+  cards.forEach((card) => {
     const title = (
       card.dataset.title ||
       card.querySelector("h3")?.textContent ||
       ""
     ).toLowerCase();
 
-    const isMatch = title.includes(keyword);
+    const match = title.includes(keyword);
+    card.style.display = match ? "" : "none";
 
-    card.style.display = isMatch ? "" : "none";
-
-    if (isMatch) {
-      visibleCount++;
-    }
+    if (match) visibleCount++;
   });
 
   if (keyword && visibleCount === 0) {
@@ -58,7 +53,8 @@ function searchAnime() {
   }
 }
 
-// Navigasi menu bawah
+/* ===== NAVIGASI ===== */
+
 function setTab(button, tab) {
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.classList.remove("active");
@@ -74,84 +70,170 @@ function setTab(button, tab) {
     Aktivitas: "Aktivitas teman dan pengumuman akan segera hadir!"
   };
 
-  showMessage(
-    messages[tab] || "Fitur akan segera hadir!"
-  );
+  showMessage(messages[tab] || "Fitur akan segera hadir!");
 }
 
-// Pesan ketika halaman selesai dibuka
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("AniStream berhasil dimuat!");
+/* ===== PROFIL PENGGUNA ===== */
 
-  const crystal = document.getElementById("crystal");
+function updateProfileUI(profile, user) {
+  const nameElement = document.querySelector(".profile-info h2");
+  const infoElement = document.querySelector(".profile-info p");
+  const avatarElement = document.querySelector(".avatar");
+  const crystalElement = document.getElementById("crystal");
+  const loginButton = document.getElementById("googleLoginBtn");
 
-  if (crystal) {
-    crystal.textContent = "0";
+  if (!profile || !user) {
+    if (nameElement) {
+      const badge = nameElement.querySelector(".badge");
+      nameElement.textContent = "AniStream ";
+      if (badge) nameElement.appendChild(badge);
+    }
+
+    if (infoElement) {
+      infoElement.textContent = "Belum login";
+    }
+
+    if (avatarElement) avatarElement.textContent = "A";
+    if (crystalElement) crystalElement.textContent = "0";
+
+    if (loginButton) {
+      loginButton.disabled = false;
+      loginButton.textContent = "Login dengan Google";
+    }
+
+    return;
   }
-});
 
-/* ===== TES KONEKSI ANISTREAM ===== */
+  const displayName =
+    profile.username ||
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    "Pengguna AniStream";
 
-console.log(
-  "Supabase library:",
-  typeof window.supabase
-);
+  if (nameElement) {
+    const badge = nameElement.querySelector(".badge");
+    nameElement.textContent = displayName + " ";
+    if (badge) nameElement.appendChild(badge);
+  }
 
-console.log(
-  "AniStream DB:",
-  typeof anistreamDB
-);
+  if (infoElement) {
+    infoElement.textContent =
+      `ID: #${profile.public_id} · Level ${profile.level}`;
+  }
 
-/* ===== GOOGLE LOGIN ANISTREAM ===== */
+  if (avatarElement) {
+    avatarElement.textContent =
+      displayName.charAt(0).toUpperCase();
+  }
+
+  if (crystalElement) {
+    crystalElement.textContent =
+      Number(profile.crystal).toLocaleString("id-ID");
+  }
+
+  if (loginButton) {
+    loginButton.disabled = false;
+    loginButton.textContent = "Keluar";
+  }
+}
+
+/* ===== AMBIL PROFIL DARI SUPABASE ===== */
+
+async function loadAniStreamProfile(user) {
+  if (!user) {
+    updateProfileUI(null, null);
+    return;
+  }
+
+  const { data: profile, error } = await anistreamDB
+    .from("profiles")
+    .select("public_id, username, level, crystal")
+    .eq("id", user.id)
+    .single();
+
+  if (error) {
+    console.error("Gagal mengambil profil:", error.message);
+    showMessage("Profil gagal dimuat. Coba muat ulang halaman.");
+    return;
+  }
+
+  updateProfileUI(profile, user);
+  console.log("Profil AniStream berhasil dimuat.");
+}
+
+/* ===== GOOGLE LOGIN DAN LOGOUT ===== */
 
 const googleLoginBtn = document.getElementById("googleLoginBtn");
 
 if (googleLoginBtn) {
   googleLoginBtn.addEventListener("click", async () => {
     googleLoginBtn.disabled = true;
-    googleLoginBtn.textContent = "Menghubungkan...";
 
     try {
-      const { data, error } = await anistreamDB.auth.signInWithOAuth({
+      const { data: sessionData } =
+        await anistreamDB.auth.getSession();
+
+      if (sessionData.session) {
+        const { error } = await anistreamDB.auth.signOut();
+
+        if (error) throw error;
+
+        updateProfileUI(null, null);
+        showMessage("Kamu berhasil logout.");
+        return;
+      }
+
+      googleLoginBtn.textContent = "Menghubungkan...";
+
+      const { error } = await anistreamDB.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.href
+          redirectTo: window.location.origin +
+            window.location.pathname
         }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     } catch (error) {
-      console.error("Google Login Error:", error);
-      alert("Login gagal: " + error.message);
+      console.error("Autentikasi gagal:", error.message);
+      showMessage("Login/logout gagal. Silakan coba lagi.");
+
       googleLoginBtn.disabled = false;
       googleLoginBtn.textContent = "Login dengan Google";
     }
   });
 }
 
-/* ===== CEK SESI LOGIN ANISTREAM ===== */
+/* ===== STATUS LOGIN DAN PEMBARUAN SESI ===== */
 
 async function checkAniStreamLogin() {
-  const { data, error } =
-    await anistreamDB.auth.getSession();
+  const { data, error } = await anistreamDB.auth.getSession();
 
   if (error) {
     console.error("Gagal memeriksa sesi:", error.message);
     return;
   }
 
-  const user = data.session?.user;
-  const button = document.getElementById("googleLoginBtn");
-
-  if (user && button) {
-    button.textContent = "Login berhasil";
-    console.log("Login aktif:", user.email);
-  } else if (button) {
-    button.textContent = "Login dengan Google";
-    console.log("Belum ada sesi login aktif.");
-  }
+  await loadAniStreamProfile(data.session?.user ?? null);
 }
+
+anistreamDB.auth.onAuthStateChange((event, session) => {
+  if (event === "INITIAL_SESSION") return;
+
+  if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+    // Jalankan setelah callback autentikasi selesai.
+    Promise.resolve().then(() => {
+      loadAniStreamProfile(session?.user ?? null);
+    });
+  }
+
+  if (event === "SIGNED_OUT") {
+    updateProfileUI(null, null);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("AniStream berhasil dimuat!");
+});
 
 checkAniStreamLogin();
