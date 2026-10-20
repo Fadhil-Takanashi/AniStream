@@ -130,3 +130,28 @@ if (googleLoginBtn) {
     }
   });
 }
+
+/* ===== CEK SESI LOGIN ANISTREAM ===== */
+
+async function checkAniStreamLogin() {
+  const { data, error } =
+    await anistreamDB.auth.getSession();
+
+  if (error) {
+    console.error("Gagal memeriksa sesi:", error.message);
+    return;
+  }
+
+  const user = data.session?.user;
+  const button = document.getElementById("googleLoginBtn");
+
+  if (user && button) {
+    button.textContent = "Login berhasil";
+    console.log("Login aktif:", user.email);
+  } else if (button) {
+    button.textContent = "Login dengan Google";
+    console.log("Belum ada sesi login aktif.");
+  }
+}
+
+checkAniStreamLogin();
