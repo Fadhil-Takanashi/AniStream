@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0912">
+  <title>AniStream</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="profile">
+      <div class="avatar">A</div>
+      <div class="profile-info">
+        <h2>AniStream <span class="badge premium">✦</span></h2>
+        <p>ID: #2072827 · Level 1</p>
+      </div>
+    </div>
+
+<button id="googleLoginBtn" type="button">
+  Login dengan Google
+</button>
+
+    <button class="icon-btn" aria-label="Notifikasi">♧</button>
+    <button class="icon-btn" aria-label="Cari anime"
+      onclick="document.getElementById('search').focus()">⌕</button>
+  </header>
+
+  <div class="crystal-bar">
+    <span>✦ <strong id="crystal">0</strong> Crystal</span>
+    <button onclick="showMessage('AniGames akan segera hadir!')">
+      ✨ AniGames
+    </button>
+  </div>
+
+  <main>
+    <section class="search-section">
+      <input id="search" type="search"
+        placeholder="Cari anime favoritmu..."
+        oninput="searchAnime()">
+    </section>
+
+    <section class="featured">
+      <p class="eyebrow">ANIME PILIHAN</p>
+      <h1>Temukan Dunia Anime Favoritmu</h1>
+      <p>Semua cerita favoritmu, dalam satu tempat.</p>
+      <button class="primary-btn"
+        onclick="showMessage('Pilih anime dari katalog untuk mulai.')">
+        Jelajahi Anime
+      </button>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Public Diskusi</h2>
+        <button onclick="showMessage('Fitur diskusi segera hadir!')">
+          Lihat semua ›
+        </button>
+      </div>
+      <div class="discussion">
+        <span class="chat-icon">☰</span>
+        <div>
+          <strong>Komunitas AniStream</strong>
+          <p>Tempat berbagi rekomendasi anime.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Terakhir Ditonton</h2>
+        <button onclick="showMessage('Riwayat lengkap segera hadir!')">
+          Selengkapnya ›
+        </button>
+      </div>
+      <div id="recent" class="anime-grid">
+        <p class="empty">Belum ada riwayat tontonan.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>New Anime Update</h2>
+        <button onclick="showMessage('Daftar update segera hadir!')">
+          Lihat semua ›
+        </button>
+      </div>
+      <div id="anime-list" class="anime-grid">
+        <article class="anime-card" data-title="Anime Demo 1">
+          <div class="poster poster-one">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">星</span>
+          </div>
+          <h3>Anime Demo 1</h3>
+          <p>Belum ada episode</p>
+        </article>
+
+        <article class="anime-card" data-title="Anime Demo 2">
+          <div class="poster poster-two">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">夢</span>
+          </div>
+          <h3>Anime Demo 2</h3>
+          <p>Belum ada episode</p>
+        </article>
+
+        <article class="anime-card" data-title="Anime Demo 3">
+          <div class="poster poster-three">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">月</span>
+          </div>
+          <h3>Anime Demo 3</h3>
+          <p>Belum ada episode</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="setTab(this,'Beranda')">
+      <span>⌂</span><small>Beranda</small>
+    </button>
+    <button class="nav-item" onclick="setTab(this,'Jadwal')">
+      <span>▦</span><small>Jadwal</small>
+    </button>
+    <button class="nav-item" onclick="setTab(this,'Subscribe')">
+      <span>▷</span><small>Subscribe</small>
+    </button>
+    <button class="nav-item" onclick="setTab(this,'Riwayat')">
+      <span>◷</span><small>Riwayat</small>
+    </button>
+    <button class="nav-item" onclick="setTab(this,'Aktivitas')">
+      <span>⌁</span><small>Aktivitas</small>
+    </button>
+  </nav>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
