@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0912">
+  <title>Admin AniStream</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b0912;--panel:#171321;--panel2:#211a30;--line:#382b4d;--text:#f5f0ff;--muted:#b6a9c9;--accent:#b58aff;--danger:#ff737d;--ok:#71e2b4}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#211333 0,var(--bg) 55%);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    button,input,textarea,select{font:inherit}button{border:0;border-radius:10px;padding:11px 14px;background:var(--accent);color:#160d24;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.danger{background:#54232b;color:#ffe8eb}.wrap{max-width:1100px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}.brand{font-size:1.5rem;font-weight:850}.brand span{color:var(--accent)}.muted{color:var(--muted)}.panel{background:rgba(23,19,33,.94);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 12px 32px #0002}.panel h2{margin:0 0 14px;font-size:1.15rem}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:.9rem;color:var(--muted)}input,textarea,select{width:100%;background:#100d18;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;min-width:0}textarea{min-height:100px;resize:vertical}.check{display:flex;align-items:center;gap:9px}.check input{width:auto}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.status{padding:11px 13px;border-radius:10px;background:var(--panel2);margin:12px 0;white-space:pre-wrap}.status.error{border:1px solid var(--danger)}.status.good{border:1px solid var(--ok)}.hidden{display:none!important}.anime-list{display:grid;gap:10px}.anime-item{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px}.poster{width:62px;height:82px;object-fit:cover;border-radius:8px;background:#30263d;flex-shrink:0}.anime-meta{min-width:0;flex:1}.anime-meta strong{display:block;overflow-wrap:anywhere}.pill{display:inline-block;padding:3px 8px;border-radius:99px;background:var(--panel2);font-size:.78rem;color:var(--muted);margin-top:5px}.item-actions{display:flex;gap:6px;flex-wrap:wrap}.small{padding:8px 10px;font-size:.85rem}.section-note{font-size:.9rem;color:var(--muted);margin:-5px 0 14px}.episode-list{margin-top:12px;display:grid;gap:8px}.episode-row{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;flex-wrap:wrap}.footer-note{font-size:.82rem;color:var(--muted);margin:18px 0}@media(max-width:650px){.wrap{padding:12px}.panel{padding:14px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.anime-item{align-items:flex-start}.item-actions{width:100%}.item-actions button{flex:1}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div><div class="brand">Ani<span>Stream</span> / Admin</div><div class="muted">Kelola katalog anime dan episode</div></div>
+      <div class="actions" style="margin:0"><a href="index.html"><button class="secondary" type="button">← Halaman utama</button></a><button id="logoutBtn" class="secondary hidden" type="button">Keluar</button></div>
+    </header>
+
+    <div id="status" class="status" role="status">Memeriksa sesi login…</div>
+
+    <section id="loginPanel" class="panel hidden">
+      <h2>Login diperlukan</h2><p class="muted">Masuk menggunakan akun Google yang memiliki izin admin/developer di database AniStream.</p>
+      <button id="loginBtn" type="button">Login dengan Google</button>
+    </section>
+
+    <div id="dashboard" class="hidden">
+      <section class="panel">
+        <h2 id="formTitle">Tambah anime</h2>
+        <p class="section-note">Anime baru disimpan sebagai draft sampai kotak publikasi dicentang.</p>
+        <form id="animeForm">
+          <input id="animeId" type="hidden">
+          <div class="grid">
+            <div class="field"><label for="titleEnglish">Judul Inggris / utama *</label><input id="titleEnglish" maxlength="200" required placeholder="Contoh: Blue Archive The Animation"></div>
+            <div class="field"><label for="titleJapanese">Judul Jepang</label><input id="titleJapanese" maxlength="200" placeholder="Judul dalam bahasa Jepang"></div>
+            <div class="field full"><label for="synopsis">Sinopsis</label><textarea id="synopsis" maxlength="10000" placeholder="Tulis sinopsis anime…"></textarea></div>
+            <div class="field"><label for="rating">Rating (0–10)</label><input id="rating" type="number" min="0" max="10" step="0.1" placeholder="8.5"></div>
+            <div class="field"><label for="thumbnail">Thumbnail / poster (opsional)</label><input id="thumbnail" type="file" accept="image/*"><small class="muted">Gunakan gambar kecil; batas bucket mengikuti pengaturan Supabase.</small></div>
+            <div class="field full"><label for="thumbnailUrl">Atau URL thumbnail yang sudah di-host</label><input id="thumbnailUrl" type="url" placeholder="https://…"></div>
+            <div class="field full"><label class="check"><input id="published" type="checkbox"> Publikasikan anime (tampil di katalog publik)</label></div>
+          </div>
+          <div class="actions"><button id="saveAnimeBtn" type="submit">Simpan anime</button><button id="resetAnimeBtn" class="secondary" type="button">Kosongkan form</button></div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2 id="episodeFormTitle">Tambah episode untuk anime</h2>
+        <p class="section-note">Pilih anime terlebih dahulu. Untuk OVA dan Movie, nomor episode dikosongkan otomatis.</p>
+        <form id="episodeForm">
+          <input id="episodeId" type="hidden">
+          <div class="grid">
+            <div class="field full"><label for="episodeAnime">Anime *</label><select id="episodeAnime" required><option value="">Memuat katalog…</option></select></div>
+            <div class="field"><label for="episodeType">Jenis *</label><select id="episodeType" required><option value="episode">Episode biasa</option><option value="ova">OVA</option><option value="movie">Movie / Film</option></select></div>
+            <div class="field"><label for="episodeNumber">Nomor episode</label><input id="episodeNumber" type="number" min="1" step="1" placeholder="Contoh: 1"></div>
+            <div class="field full"><label for="episodeTitle">Judul episode / film</label><input id="episodeTitle" maxlength="200" placeholder="Opsional"></div>
+            <div class="field full"><label for="videoUrl">URL video / sumber pemutar</label><input id="videoUrl" type="url" placeholder="https://…"><small class="muted">Untuk sekarang berupa URL, bukan upload video. Gunakan hanya video yang kamu punya hak atau izin untuk tayangkan.</small></div>
+            <div class="field full"><label class="check"><input id="episodePublished" type="checkbox"> Publikasikan episode</label></div>
+          </div>
+          <div class="actions"><button id="saveEpisodeBtn" type="submit">Simpan episode</button><button id="resetEpisodeBtn" class="secondary" type="button">Kosongkan form</button></div>
+        </form>
+        <div id="episodeList" class="episode-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Daftar anime</h2>
+        <div class="field"><label for="filterAnime">Cari judul</label><input id="filterAnime" type="search" placeholder="Cari anime…"></div>
+        <div id="animeList" class="anime-list" style="margin-top:12px"></div>
+      </section>
+      <p class="footer-note">Akses admin ditentukan oleh Supabase Auth dan kolom <code>profiles.role</code>. Jangan pernah memasukkan service_role key ke file website.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
