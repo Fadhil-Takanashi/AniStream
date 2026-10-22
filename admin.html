@@ -37,6 +37,7 @@
             <div class="field full"><label for="synopsis">Sinopsis</label><textarea id="synopsis" maxlength="10000" placeholder="Tulis sinopsis anime…"></textarea></div>
             <div class="field full"><label for="genres">Genre anime</label><input id="genres" maxlength="500" placeholder="Contoh: Action, Romance, Comedy"><small class="muted">Pisahkan genre dengan koma. Genre baru boleh ditulis langsung, tidak perlu mengubah kode.</small></div>
             <div class="field"><label for="rating">Rating (0–10)</label><input id="rating" type="number" min="0" max="10" step="0.1" placeholder="8.5"></div>
+            <div class="field"><label for="animeStatus">Status anime</label><select id="animeStatus"><option value="ongoing">Ongoing (sedang tayang)</option><option value="complete">Complete (sudah selesai tayang)</option></select></div>
             <div class="field"><label for="thumbnail">Thumbnail / poster (opsional)</label><input id="thumbnail" type="file" accept="image/*"><small class="muted">Gunakan gambar kecil; batas bucket mengikuti pengaturan Supabase.</small></div>
             <div class="field full"><label for="thumbnailUrl">Atau URL thumbnail yang sudah di-host</label><input id="thumbnailUrl" type="url" placeholder="https://…"></div>
             <div class="field full"><label class="check"><input id="published" type="checkbox"> Publikasikan anime (tampil di katalog publik)</label></div>

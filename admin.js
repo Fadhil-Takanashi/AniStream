@@ -99,7 +99,7 @@ function renderAnimeList() {
     const poster = a.thumbnail_path || "";
     return `<article class="anime-item">
       ${poster ? `<img class="poster" src="${escapeHTML(poster)}" alt="Poster" loading="lazy" onerror="this.style.visibility='hidden'">` : '<div class="poster" aria-hidden="true"></div>'}
-      <div class="anime-meta"><strong>${escapeHTML(a.title_english)}</strong><div class="muted">${escapeHTML(a.title_japanese || "Judul Jepang belum diisi")} · Rating: ${a.rating == null ? "—" : escapeHTML(a.rating)}</div><div class="muted">Genre: ${escapeHTML((a.genres || []).join(", ") || "Belum diisi")}</div><span class="pill">${a.is_published ? "Dipublikasikan" : "Draft"}</span></div>
+      <div class="anime-meta"><strong>${escapeHTML(a.title_english)}</strong><div class="muted">${escapeHTML(a.title_japanese || "Judul Jepang belum diisi")} · Rating: ${a.rating == null ? "—" : escapeHTML(a.rating)}</div><div class="muted">Genre: ${escapeHTML((a.genres || []).join(", ") || "Belum diisi")}</div><span class="pill">${a.is_published ? "Dipublikasikan" : "Draft"}</span> <span class="pill">${a.status === "complete" ? "Complete" : "Ongoing"}</span></div>
       <div class="item-actions"><button class="secondary small" data-edit-anime="${a.id}">Edit</button><button class="secondary small" data-episodes-anime="${a.id}">Episode</button><button class="danger small" data-delete-anime="${a.id}">Hapus</button></div>
     </article>`;
   }).join("");
@@ -131,7 +131,7 @@ function resetAnimeForm() {
 }
 function editAnime(id) {
   const a = state.anime.find(item => item.id === id); if (!a) return;
-  $("animeId").value = a.id; $("titleEnglish").value = a.title_english || ""; $("titleJapanese").value = a.title_japanese || ""; $("synopsis").value = a.synopsis || ""; $("genres").value = (a.genres || []).join(", "); $("rating").value = a.rating ?? ""; $("thumbnailUrl").value = a.thumbnail_path || ""; $("published").checked = Boolean(a.is_published);
+  $("animeId").value = a.id; $("titleEnglish").value = a.title_english || ""; $("titleJapanese").value = a.title_japanese || ""; $("synopsis").value = a.synopsis || ""; $("genres").value = (a.genres || []).join(", "); $("rating").value = a.rating ?? ""; $("animeStatus").value = a.status === "complete" ? "complete" : "ongoing"; $("thumbnailUrl").value = a.thumbnail_path || ""; $("published").checked = Boolean(a.is_published);
   $("formTitle").textContent = "Edit anime"; $("saveAnimeBtn").textContent = "Simpan perubahan"; window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -160,6 +160,7 @@ async function saveAnime(event) {
       synopsis: $("synopsis").value.trim() || null,
       genres: [...new Set($("genres").value.split(/[,;\n]/).map(g => g.trim()).filter(Boolean))],
       rating: $("rating").value === "" ? null : Number($("rating").value),
+      status: $("animeStatus").value === "complete" ? "complete" : "ongoing",
       thumbnail_path: thumbnailPath,
       is_published: $("published").checked,
       updated_at: new Date().toISOString()

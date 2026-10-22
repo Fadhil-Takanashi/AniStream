@@ -299,11 +299,11 @@ async function loadAnimeCatalog() {
   animeList.innerHTML = '<p class="empty">Memuat katalog anime…</p>';
   try {
     const { data, error } = await anistreamDB.from("anime")
-      .select("id,title_english,title_japanese,synopsis,rating,thumbnail_path,genres,is_published,created_at")
+      .select("id,title_english,title_japanese,synopsis,rating,thumbnail_path,genres,status,is_published,created_at")
       .eq("is_published", true)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    publicAnimeRows = data || [];
+    publicAnimeRows = (data || []).filter(anime => (anime.status || "ongoing") === "ongoing");
     rebuildGenreFilter(publicAnimeRows);
     renderAnimeCatalog(publicAnimeRows);
   } catch (error) {
