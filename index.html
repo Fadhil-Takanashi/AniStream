@@ -7,20 +7,6 @@
   <meta name="theme-color" content="#0b0912">
   <title>AniStream</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .catalog-count,.catalog-note{color:var(--muted,#b6a9c9);font-size:.88rem}
-    .catalog-note{margin:0 0 12px}
-    .genre-filters{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 12px;scrollbar-width:thin}
-    .genre-chip{flex:0 0 auto;border:1px solid var(--line,#382b4d);border-radius:999px;padding:8px 13px;background:var(--panel2,#211a30);color:var(--text,#f5f0ff);cursor:pointer}
-    .genre-chip.active{background:var(--accent,#b58aff);border-color:var(--accent,#b58aff);color:#160d24;font-weight:700}
-    .anime-card{min-width:0;overflow:hidden;cursor:default}
-    .anime-card .catalog-poster{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;border-radius:10px;background:var(--panel2,#211a30)}
-    .anime-card .poster-placeholder{width:100%;aspect-ratio:3/4;border-radius:10px;background:linear-gradient(135deg,#211333,#100d18);display:grid;place-items:center;color:var(--accent,#b58aff);font-size:2rem}
-    .anime-card h3{margin:8px 0 4px;font-size:.98rem;overflow-wrap:anywhere}
-    .anime-card .anime-rating,.anime-card .anime-genres{margin:0 0 5px;color:var(--muted,#b6a9c9);font-size:.8rem}
-    .anime-card .anime-genres{line-height:1.4}
-  </style>
-
 </head>
 <body>
 
@@ -94,17 +80,40 @@
       </div>
     </section>
 
-    <section class="section" id="catalogSection">
+    <section class="section">
       <div class="section-heading">
-        <h2>Katalog Anime</h2>
-        <span id="catalogCount" class="catalog-count">Memuat...</span>
+        <h2>New Anime Update</h2>
+        <button onclick="showMessage('Daftar update segera hadir!')">
+          Lihat semua ›
+        </button>
       </div>
-      <p class="catalog-note">Cari judul atau pilih genre untuk menemukan anime favoritmu.</p>
-      <div id="genreFilters" class="genre-filters" aria-label="Filter genre anime">
-        <button type="button" class="genre-chip active" data-genre="__all">Semua</button>
-      </div>
-      <div id="anime-list" class="anime-grid" aria-live="polite">
-        <p class="empty">Memuat katalog anime...</p>
+      <div id="anime-list" class="anime-grid">
+        <article class="anime-card" data-title="Anime Demo 1">
+          <div class="poster poster-one">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">星</span>
+          </div>
+          <h3>Anime Demo 1</h3>
+          <p>Belum ada episode</p>
+        </article>
+
+        <article class="anime-card" data-title="Anime Demo 2">
+          <div class="poster poster-two">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">夢</span>
+          </div>
+          <h3>Anime Demo 2</h3>
+          <p>Belum ada episode</p>
+        </article>
+
+        <article class="anime-card" data-title="Anime Demo 3">
+          <div class="poster poster-three">
+            <span class="new-label">NEW</span>
+            <span class="poster-symbol">月</span>
+          </div>
+          <h3>Anime Demo 3</h3>
+          <p>Belum ada episode</p>
+        </article>
       </div>
     </section>
   </main>

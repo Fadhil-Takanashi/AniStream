@@ -24,127 +24,34 @@ function showMessage(message) {
   }, 2500);
 }
 
-/* ===== KATALOG ANIME + FILTER GENRE ===== */
-
-let animeCatalog = [];
-let selectedAnimeGenre = "__all";
-
-function escapeHTML(value = "") {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[char]));
-}
-
-function normalizeGenres(value) {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-  if (typeof value === "string") {
-    return value.split(/[,;\n]/).map((item) => item.trim()).filter(Boolean);
-  }
-  return [];
-}
-
-function getAnimeTitle(anime) {
-  return anime.title_english || anime.title || anime.title_japanese || "Anime tanpa judul";
-}
-
-function renderGenreFilters() {
-  const container = document.getElementById("genreFilters");
-  if (!container) return;
-
-  const genres = [...new Set(animeCatalog.flatMap((anime) => normalizeGenres(anime.genres)))];
-  genres.sort((a, b) => a.localeCompare(b, "id"));
-
-  const buttons = [{ value: "__all", label: "Semua" }, ...genres.map((genre) => ({
-    value: genre, label: genre
-  }))];
-
-  container.innerHTML = buttons.map((item) => `
-    <button type="button"
-      class="genre-chip${selectedAnimeGenre === item.value ? " active" : ""}"
-      data-genre="${escapeHTML(item.value)}"
-      aria-pressed="${selectedAnimeGenre === item.value}">
-      ${escapeHTML(item.label)}
-    </button>
-  `).join("");
-}
-
-function renderAnimeCatalog() {
-  const container = document.getElementById("anime-list");
-  const count = document.getElementById("catalogCount");
-  const searchInput = document.getElementById("search");
-  if (!container) return;
-
-  const keyword = (searchInput?.value || "").trim().toLocaleLowerCase("id");
-  const filtered = animeCatalog.filter((anime) => {
-    const title = `${getAnimeTitle(anime)} ${anime.title_japanese || ""}`.toLocaleLowerCase("id");
-    const genres = normalizeGenres(anime.genres);
-    const matchesKeyword = title.includes(keyword) ||
-      genres.some((genre) => genre.toLocaleLowerCase("id").includes(keyword));
-    const matchesGenre = selectedAnimeGenre === "__all" ||
-      genres.some((genre) => genre.toLocaleLowerCase("id") === selectedAnimeGenre.toLocaleLowerCase("id"));
-    return matchesKeyword && matchesGenre;
-  });
-
-  if (count) count.textContent = `${filtered.length} anime`;
-  if (!filtered.length) {
-    container.innerHTML = '<p class="empty">Anime tidak ditemukan untuk pencarian atau genre ini.</p>';
-    return;
-  }
-
-  container.innerHTML = filtered.map((anime) => {
-    const title = getAnimeTitle(anime);
-    const genres = normalizeGenres(anime.genres);
-    const poster = anime.thumbnail_path || anime.thumbnail_url || "";
-    const rating = anime.rating == null ? "" : `Rating ${escapeHTML(anime.rating)}/10`;
-    return `
-      <article class="anime-card">
-        ${poster
-          ? `<img class="catalog-poster" src="${escapeHTML(poster)}" alt="Poster ${escapeHTML(title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="poster-placeholder" style="display:none" aria-hidden="true">星</div>`
-          : '<div class="poster-placeholder" aria-hidden="true">星</div>'}
-        <h3>${escapeHTML(title)}</h3>
-        ${rating ? `<p class="anime-rating">${rating}</p>` : ""}
-        <p class="anime-genres">${genres.length ? escapeHTML(genres.join(" · ")) : "Genre belum ditambahkan"}</p>
-      </article>
-    `;
-  }).join("");
-}
+/* ===== PENCARIAN ANIME ===== */
 
 function searchAnime() {
-  renderAnimeCatalog();
-}
+  const input = document.getElementById("search");
+  const cards = document.querySelectorAll(".anime-card");
 
-async function loadAnimeCatalog() {
-  const container = document.getElementById("anime-list");
-  const count = document.getElementById("catalogCount");
-  if (container) container.innerHTML = '<p class="empty">Memuat katalog anime...</p>';
+  if (!input) return;
 
-  const { data, error } = await anistreamDB
-    .from("anime")
-    .select("id,title_english,title_japanese,rating,thumbnail_path,genres,is_published,created_at")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+  const keyword = input.value.trim().toLowerCase();
+  let visibleCount = 0;
 
-  if (error) {
-    console.error("Gagal memuat katalog anime:", error.message);
-    if (container) container.innerHTML = '<p class="empty">Katalog belum bisa dimuat. Periksa policy SELECT publik pada tabel anime.</p>';
-    if (count) count.textContent = "Gagal memuat";
-    return;
+  cards.forEach((card) => {
+    const title = (
+      card.dataset.title ||
+      card.querySelector("h3")?.textContent ||
+      ""
+    ).toLowerCase();
+
+    const match = title.includes(keyword);
+    card.style.display = match ? "" : "none";
+
+    if (match) visibleCount++;
+  });
+
+  if (keyword && visibleCount === 0) {
+    showMessage("Anime tidak ditemukan.");
   }
-
-  animeCatalog = data || [];
-  renderGenreFilters();
-  renderAnimeCatalog();
 }
-
-document.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-genre]");
-  if (!button) return;
-  selectedAnimeGenre = button.dataset.genre || "__all";
-  renderGenreFilters();
-  renderAnimeCatalog();
-});
 
 /* ===== NAVIGASI ===== */
 
@@ -327,7 +234,6 @@ anistreamDB.auth.onAuthStateChange((event, session) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("AniStream berhasil dimuat!");
-  loadAnimeCatalog();
 });
 
 checkAniStreamLogin();
