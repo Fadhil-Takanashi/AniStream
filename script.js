@@ -285,10 +285,11 @@ function renderAnimeCatalog(rows) {
       : '<div class="poster"><span class="poster-symbol">星</span></div>';
     const tags = genres.map(g => `<span class="genre-tag">${catalogSafeText(g)}</span>`).join("");
     const rating = a.rating == null ? "" : `<p class="anime-rating">Rating: ${catalogSafeText(a.rating)}/10</p>`;
-    return `<article class="anime-card" data-title="${catalogSafeText(title)}">
+    return `<article class="anime-card" role="button" tabindex="0" data-anime-id="${catalogSafeText(a.id)}" data-title="${catalogSafeText(title)}" aria-label="Detail ${catalogSafeText(title)}">
       ${poster}<h3>${catalogSafeText(title)}</h3>
       ${a.title_japanese ? `<p>${catalogSafeText(a.title_japanese)}</p>` : ""}
-      ${rating}${a.synopsis ? `<p>${catalogSafeText(a.synopsis)}</p>` : ""}
+      ${rating}
+      <p class="detail-muted">Status: ${a.status === "complete" ? "Complete" : "Ongoing"}</p>
       <div class="genre-tags">${tags || '<span class="genre-tag">Genre belum diisi</span>'}</div>
     </article>`;
   }).join("");
@@ -306,6 +307,7 @@ async function loadAnimeCatalog() {
     publicAnimeRows = (data || []).filter(anime => (anime.status || "ongoing") === "ongoing");
     rebuildGenreFilter(publicAnimeRows);
     renderAnimeCatalog(publicAnimeRows);
+    renderHotAnime(publicAnimeRows);
   } catch (error) {
     console.error("Gagal memuat katalog anime:", error.message || error);
     animeList.innerHTML = '<p class="empty">Katalog belum bisa dimuat. Periksa koneksi dan kebijakan baca tabel anime di Supabase.</p>';
@@ -314,3 +316,100 @@ async function loadAnimeCatalog() {
 
 if (genreFilter) genreFilter.addEventListener("change", () => renderAnimeCatalog(publicAnimeRows));
 document.addEventListener("DOMContentLoaded", loadAnimeCatalog);
+
+
+/* ===== DETAIL ANIME & HOT ANIME ===== */
+let currentDetailAnime = null;
+
+function detailSafe(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+}
+
+function renderHotAnime(rows) {
+  const target = document.getElementById("hot-anime-list");
+  if (!target) return;
+  const hot = [...rows]
+    .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0))
+    .slice(0, 6);
+  if (!hot.length) {
+    target.innerHTML = '<p class="empty">Belum ada anime untuk ditampilkan.</p>';
+    return;
+  }
+  target.innerHTML = hot.map(a => {
+    const title = a.title_english || "Tanpa judul";
+    const poster = a.thumbnail_path
+      ? `<img class="poster" src="${detailSafe(a.thumbnail_path)}" alt="Poster ${detailSafe(title)}" loading="lazy">`
+      : '<div class="poster poster-one"><span class="poster-symbol">星</span></div>';
+    return `<article class="anime-card" role="button" tabindex="0" data-anime-id="${detailSafe(a.id)}" aria-label="Detail ${detailSafe(title)}">
+      ${poster}<h3>${detailSafe(title)}</h3>
+      <p>⭐ ${a.rating == null ? "Belum ada rating" : detailSafe(a.rating + "/10")}</p>
+    </article>`;
+  }).join("");
+}
+
+function openAnimeDetail(animeId) {
+  const anime = publicAnimeRows.find(item => String(item.id) === String(animeId));
+  if (!anime) return;
+  currentDetailAnime = anime;
+  const modal = document.getElementById("anime-detail-modal");
+  const content = document.getElementById("detail-content");
+  if (!modal || !content) return;
+  const title = anime.title_english || "Tanpa judul";
+  const poster = anime.thumbnail_path
+    ? `<img class="detail-poster" src="${detailSafe(anime.thumbnail_path)}" alt="Poster ${detailSafe(title)}">`
+    : '<div class="detail-poster"></div>';
+  const genres = catalogGenres(anime.genres);
+  content.innerHTML = `
+    <div class="detail-hero">
+      ${poster}
+      <div>
+        <p class="eyebrow">DETAIL ANIME</p>
+        <h2 class="detail-title" id="detail-title">${detailSafe(title)}</h2>
+        ${anime.title_japanese ? `<p class="detail-muted">${detailSafe(anime.title_japanese)}</p>` : ""}
+        <p class="detail-muted">⭐ Rating: ${anime.rating == null ? "Belum tersedia" : detailSafe(anime.rating + "/10")}</p>
+        <p class="detail-muted">Status: ${detailSafe(anime.status || "ongoing") === "complete" ? "Complete" : "Ongoing"}</p>
+      </div>
+    </div>
+    <div class="detail-tags">${genres.length ? genres.map(g => `<span>${detailSafe(g)}</span>`).join("") : '<span>Genre belum diisi</span>'}</div>
+    <h3 class="detail-section-title">Sinopsis</h3>
+    <p class="detail-synopsis">${detailSafe(anime.synopsis || "Sinopsis belum tersedia.")}</p>
+    <h3 class="detail-section-title">Katalog Episode</h3>
+    <div class="detail-empty">Katalog episode akan ditampilkan setelah data episode dihubungkan ke halaman ini. Data anime kamu tidak diubah.</div>
+  `;
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeAnimeDetail() {
+  const modal = document.getElementById("anime-detail-modal");
+  if (modal) modal.hidden = true;
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("click", event => {
+  const card = event.target.closest(".anime-card[data-anime-id]");
+  if (card) openAnimeDetail(card.dataset.animeId);
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeAnimeDetail();
+  if ((event.key === "Enter" || event.key === " ") && event.target.matches(".anime-card[data-anime-id]")) {
+    event.preventDefault();
+    openAnimeDetail(event.target.dataset.animeId);
+  }
+});
+
+
+/* Sinkronkan pencarian dengan kartu katalog yang dirender dari Supabase. */
+function applyAnimeSearch() {
+  const input = document.getElementById("search");
+  if (!input) return;
+  const keyword = input.value.trim().toLowerCase();
+  document.querySelectorAll(".anime-card").forEach(card => {
+    const title = (card.dataset.title || card.querySelector("h3")?.textContent || "").toLowerCase();
+    card.style.display = title.includes(keyword) ? "" : "none";
+  });
+}
+const animeSearchInput = document.getElementById("search");
+if (animeSearchInput) animeSearchInput.addEventListener("input", applyAnimeSearch);

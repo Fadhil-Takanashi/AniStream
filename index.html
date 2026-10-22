@@ -76,6 +76,17 @@
       </div>
     </section>
 
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>🔥 Hot Anime</h2>
+        <span class="section-note-inline">Rating tertinggi</span>
+      </div>
+      <div id="hot-anime-list" class="anime-grid">
+        <p class="empty">Memuat anime populer…</p>
+      </div>
+    </section>
+
     <section class="section">
       <div class="section-heading">
         <h2>Terakhir Ditonton</h2>
@@ -122,6 +133,15 @@
       <span>⌁</span><small>Aktivitas</small>
     </button>
   </nav>
+
+
+  <section id="anime-detail-modal" class="detail-modal" hidden aria-modal="true" role="dialog" aria-labelledby="detail-title">
+    <div class="detail-backdrop" onclick="closeAnimeDetail()"></div>
+    <article class="detail-panel">
+      <button class="detail-close" type="button" aria-label="Tutup detail anime" onclick="closeAnimeDetail()">✕</button>
+      <div id="detail-content"></div>
+    </article>
+  </section>
 
   <div id="toast" class="toast" role="status"></div>
 
