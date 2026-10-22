@@ -7,6 +7,14 @@
   <meta name="theme-color" content="#0b0912">
   <title>AniStream</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .genre-filter{display:flex;flex-direction:column;gap:6px;margin:0 0 14px}
+    .genre-filter label{font-size:.9rem;opacity:.8}
+    .genre-filter select{width:100%;max-width:360px;padding:10px 12px;border-radius:10px;background:#171321;color:#f5f0ff;border:1px solid #382b4d}
+    .anime-card .genre-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+    .anime-card .genre-tag{font-size:.75rem;padding:3px 7px;border-radius:99px;background:#211a30;color:#d9c5ff}
+    .anime-card .anime-rating{font-size:.85rem;opacity:.8}
+  </style>
 </head>
 <body>
 
@@ -87,33 +95,12 @@
           Lihat semua ›
         </button>
       </div>
+      <div class="genre-filter">
+        <label for="genre-filter">Filter genre</label>
+        <select id="genre-filter"><option value="">Semua genre</option></select>
+      </div>
       <div id="anime-list" class="anime-grid">
-        <article class="anime-card" data-title="Anime Demo 1">
-          <div class="poster poster-one">
-            <span class="new-label">NEW</span>
-            <span class="poster-symbol">星</span>
-          </div>
-          <h3>Anime Demo 1</h3>
-          <p>Belum ada episode</p>
-        </article>
-
-        <article class="anime-card" data-title="Anime Demo 2">
-          <div class="poster poster-two">
-            <span class="new-label">NEW</span>
-            <span class="poster-symbol">夢</span>
-          </div>
-          <h3>Anime Demo 2</h3>
-          <p>Belum ada episode</p>
-        </article>
-
-        <article class="anime-card" data-title="Anime Demo 3">
-          <div class="poster poster-three">
-            <span class="new-label">NEW</span>
-            <span class="poster-symbol">月</span>
-          </div>
-          <h3>Anime Demo 3</h3>
-          <p>Belum ada episode</p>
-        </article>
+        <p class="empty">Memuat katalog anime…</p>
       </div>
     </section>
   </main>

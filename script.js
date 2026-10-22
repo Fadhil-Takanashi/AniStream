@@ -237,3 +237,80 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 checkAniStreamLogin();
+
+
+/* ===== KATALOG ANIME SUPABASE + FILTER GENRE ===== */
+const genreFilter = document.getElementById("genre-filter");
+const animeList = document.getElementById("anime-list");
+let publicAnimeRows = [];
+
+function catalogSafeText(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[ch]));
+}
+
+function catalogGenres(value) {
+  if (Array.isArray(value)) return value.map(g => String(g).trim()).filter(Boolean);
+  if (typeof value === "string") return value.split(/[,;\n]/).map(g => g.trim()).filter(Boolean);
+  return [];
+}
+
+function rebuildGenreFilter(rows) {
+  if (!genreFilter) return;
+  const selected = genreFilter.value;
+  const genres = [...new Set(rows.flatMap(a => catalogGenres(a.genres)))];
+  genres.sort((a,b) => a.localeCompare(b, "id"));
+  genreFilter.innerHTML = '<option value="">Semua genre</option>' +
+    genres.map(g => `<option value="${catalogSafeText(g)}">${catalogSafeText(g)}</option>`).join("");
+  if (genres.includes(selected)) genreFilter.value = selected;
+}
+
+function renderAnimeCatalog(rows) {
+  if (!animeList) return;
+  const selected = genreFilter?.value || "";
+  const filtered = rows.filter(a => !selected ||
+    catalogGenres(a.genres).some(g => g.toLowerCase() === selected.toLowerCase()));
+
+  if (!filtered.length) {
+    animeList.innerHTML = '<p class="empty">Belum ada anime yang cocok dengan genre ini.</p>';
+    return;
+  }
+
+  animeList.innerHTML = filtered.map(a => {
+    const title = a.title_english || "Tanpa judul";
+    const genres = catalogGenres(a.genres);
+    const poster = a.thumbnail_path
+      ? `<img class="poster" src="${catalogSafeText(a.thumbnail_path)}" alt="Poster ${catalogSafeText(title)}" loading="lazy">`
+      : '<div class="poster"><span class="poster-symbol">星</span></div>';
+    const tags = genres.map(g => `<span class="genre-tag">${catalogSafeText(g)}</span>`).join("");
+    const rating = a.rating == null ? "" : `<p class="anime-rating">Rating: ${catalogSafeText(a.rating)}/10</p>`;
+    return `<article class="anime-card" data-title="${catalogSafeText(title)}">
+      ${poster}<h3>${catalogSafeText(title)}</h3>
+      ${a.title_japanese ? `<p>${catalogSafeText(a.title_japanese)}</p>` : ""}
+      ${rating}${a.synopsis ? `<p>${catalogSafeText(a.synopsis)}</p>` : ""}
+      <div class="genre-tags">${tags || '<span class="genre-tag">Genre belum diisi</span>'}</div>
+    </article>`;
+  }).join("");
+}
+
+async function loadAnimeCatalog() {
+  if (!animeList) return;
+  animeList.innerHTML = '<p class="empty">Memuat katalog anime…</p>';
+  try {
+    const { data, error } = await anistreamDB.from("anime")
+      .select("id,title_english,title_japanese,synopsis,rating,thumbnail_path,genres,is_published,created_at")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    publicAnimeRows = data || [];
+    rebuildGenreFilter(publicAnimeRows);
+    renderAnimeCatalog(publicAnimeRows);
+  } catch (error) {
+    console.error("Gagal memuat katalog anime:", error.message || error);
+    animeList.innerHTML = '<p class="empty">Katalog belum bisa dimuat. Periksa koneksi dan kebijakan baca tabel anime di Supabase.</p>';
+  }
+}
+
+if (genreFilter) genreFilter.addEventListener("change", () => renderAnimeCatalog(publicAnimeRows));
+document.addEventListener("DOMContentLoaded", loadAnimeCatalog);
