@@ -466,3 +466,16 @@ input:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* FIX: thumbnail anime harus mengikuti ukuran kartu, bukan ukuran asli gambar */
+.anime-card img.poster {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  margin: 0 0 9px;
+  border: 1px solid #443054;
+  border-radius: 12px;
+}
