@@ -305,12 +305,54 @@ async function loadAnimeCatalog() {
     if (error) throw error;
     publicAnimeRows = (data || []).filter(anime => (anime.status || "ongoing") === "ongoing");
     rebuildGenreFilter(publicAnimeRows);
-    renderAnimeCatalog(publicAnimeRows);
+    if (!publicAnimeRows.length) {
+      animeList.innerHTML = '<p class="empty">Belum ada anime ongoing yang dipublikasikan. Periksa status dan publikasi anime di dashboard admin.</p>';
+    } else {
+      renderAnimeCatalog(publicAnimeRows);
+    }
+    renderHotAnime(publicAnimeRows);
   } catch (error) {
     console.error("Gagal memuat katalog anime:", error.message || error);
-    animeList.innerHTML = '<p class="empty">Katalog belum bisa dimuat. Periksa koneksi dan kebijakan baca tabel anime di Supabase.</p>';
+    animeList.innerHTML = '<p class="empty">Katalog gagal dimuat. Periksa koneksi dan kebijakan baca tabel anime di Supabase.</p>';
+    if (hotAnimeList) hotAnimeList.innerHTML = '<p class="empty">Hot Anime gagal dimuat.</p>';
   }
 }
 
 if (genreFilter) genreFilter.addEventListener("change", () => renderAnimeCatalog(publicAnimeRows));
 document.addEventListener("DOMContentLoaded", loadAnimeCatalog);
+
+
+/* ===== HOT ANIME ===== */
+const hotAnimeList = document.getElementById("hot-anime-list");
+
+function renderHotAnime(rows) {
+  if (!hotAnimeList) return;
+  const hotRows = [...rows].sort((a, b) => {
+    const ratingA = Number(a.rating) || 0;
+    const ratingB = Number(b.rating) || 0;
+    return ratingB - ratingA;
+  }).slice(0, 6);
+
+  if (!hotRows.length) {
+    hotAnimeList.innerHTML = '<p class="empty">Belum ada anime untuk ditampilkan.</p>';
+    return;
+  }
+
+  hotAnimeList.innerHTML = hotRows.map(a => {
+    const title = a.title_english || "Tanpa judul";
+    const poster = a.thumbnail_path
+      ? `<img class="poster" src="${catalogSafeText(a.thumbnail_path)}" alt="Poster ${catalogSafeText(title)}" loading="lazy">`
+      : '<div class="poster"><span class="poster-symbol">星</span></div>';
+    const rating = a.rating == null ? "Belum ada rating" : `Rating: ${catalogSafeText(a.rating)}/10`;
+    return `<article class="anime-card" data-title="${catalogSafeText(title)}">
+      ${poster}<h3>${catalogSafeText(title)}</h3><p>${rating}</p>
+    </article>`;
+  }).join("");
+}
+
+// Wrap catalog rendering so the hot list also refreshes when data loads.
+const originalRenderAnimeCatalog = renderAnimeCatalog;
+renderAnimeCatalog = function(rows) {
+  originalRenderAnimeCatalog(rows);
+  renderHotAnime(publicAnimeRows);
+};
