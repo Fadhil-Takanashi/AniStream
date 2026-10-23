@@ -239,9 +239,11 @@ document.addEventListener("DOMContentLoaded", () => {
 checkAniStreamLogin();
 
 
-/* ===== KATALOG ANIME SUPABASE + FILTER GENRE ===== */
+/* ===== KATALOG ANIME SUPABASE + FILTER GENRE + HOT ANIME ===== */
 const genreFilter = document.getElementById("genre-filter");
 const animeList = document.getElementById("anime-list");
+const hotAnimeList = document.getElementById("hot-anime-list");
+let publishedAnimeRows = [];
 let publicAnimeRows = [];
 
 function catalogSafeText(value) {
@@ -254,6 +256,28 @@ function catalogGenres(value) {
   if (Array.isArray(value)) return value.map(g => String(g).trim()).filter(Boolean);
   if (typeof value === "string") return value.split(/[,;\n]/).map(g => g.trim()).filter(Boolean);
   return [];
+}
+
+function catalogPoster(anime) {
+  const title = anime.title_english || anime.title_japanese || "Anime";
+  return anime.thumbnail_path
+    ? `<img class="poster" src="${catalogSafeText(anime.thumbnail_path)}" alt="Poster ${catalogSafeText(title)}" loading="lazy">`
+    : '<div class="poster"><span class="poster-symbol">星</span></div>';
+}
+
+function catalogCard(anime) {
+  const title = anime.title_english || anime.title_japanese || "Tanpa judul";
+  const genres = catalogGenres(anime.genres);
+  const tags = genres.map(g => `<span class="genre-tag">${catalogSafeText(g)}</span>`).join("");
+  const rating = anime.rating == null ? "" : `<p class="anime-rating">Rating: ${catalogSafeText(anime.rating)}/10</p>`;
+  return `<article class="anime-card" data-title="${catalogSafeText(title)}">
+    ${catalogPoster(anime)}
+    <h3>${catalogSafeText(title)}</h3>
+    ${anime.title_japanese ? `<p>${catalogSafeText(anime.title_japanese)}</p>` : ""}
+    ${rating}
+    ${anime.synopsis ? `<p>${catalogSafeText(anime.synopsis)}</p>` : ""}
+    <div class="genre-tags">${tags || '<span class="genre-tag">Genre belum diisi</span>'}</div>
+  </article>`;
 }
 
 function rebuildGenreFilter(rows) {
@@ -273,86 +297,53 @@ function renderAnimeCatalog(rows) {
     catalogGenres(a.genres).some(g => g.toLowerCase() === selected.toLowerCase()));
 
   if (!filtered.length) {
-    animeList.innerHTML = '<p class="empty">Belum ada anime yang cocok dengan genre ini.</p>';
+    animeList.innerHTML = rows.length
+      ? '<p class="empty">Belum ada anime yang cocok dengan genre ini.</p>'
+      : '<p class="empty">Belum ada anime ongoing yang dipublikasikan. Periksa status dan publikasi anime di dashboard admin.</p>';
     return;
   }
+  animeList.innerHTML = filtered.map(catalogCard).join("");
+}
 
-  animeList.innerHTML = filtered.map(a => {
-    const title = a.title_english || "Tanpa judul";
-    const genres = catalogGenres(a.genres);
-    const poster = a.thumbnail_path
-      ? `<img class="poster" src="${catalogSafeText(a.thumbnail_path)}" alt="Poster ${catalogSafeText(title)}" loading="lazy">`
-      : '<div class="poster"><span class="poster-symbol">星</span></div>';
-    const tags = genres.map(g => `<span class="genre-tag">${catalogSafeText(g)}</span>`).join("");
-    const rating = a.rating == null ? "" : `<p class="anime-rating">Rating: ${catalogSafeText(a.rating)}/10</p>`;
-    return `<article class="anime-card" data-title="${catalogSafeText(title)}">
-      ${poster}<h3>${catalogSafeText(title)}</h3>
-      ${a.title_japanese ? `<p>${catalogSafeText(a.title_japanese)}</p>` : ""}
-      ${rating}${a.synopsis ? `<p>${catalogSafeText(a.synopsis)}</p>` : ""}
-      <div class="genre-tags">${tags || '<span class="genre-tag">Genre belum diisi</span>'}</div>
-    </article>`;
-  }).join("");
+function renderHotAnime(rows) {
+  if (!hotAnimeList) return;
+  const sorted = [...rows].sort((a, b) => {
+    const ratingA = Number(a.rating) || 0;
+    const ratingB = Number(b.rating) || 0;
+    return ratingB - ratingA;
+  });
+  hotAnimeList.innerHTML = sorted.length
+    ? sorted.slice(0, 12).map(catalogCard).join("")
+    : '<p class="empty">Belum ada anime yang dipublikasikan untuk ditampilkan.</p>';
 }
 
 async function loadAnimeCatalog() {
   if (!animeList) return;
   animeList.innerHTML = '<p class="empty">Memuat katalog anime…</p>';
+  if (hotAnimeList) hotAnimeList.innerHTML = '<p class="empty">Memuat Hot Anime…</p>';
   try {
     const { data, error } = await anistreamDB.from("anime")
       .select("id,title_english,title_japanese,synopsis,rating,thumbnail_path,genres,status,is_published,created_at")
       .eq("is_published", true)
       .order("created_at", { ascending: false });
     if (error) throw error;
-    publicAnimeRows = (data || []).filter(anime => (anime.status || "ongoing") === "ongoing");
+
+    publishedAnimeRows = data || [];
+    publicAnimeRows = publishedAnimeRows.filter(anime =>
+      String(anime.status || "ongoing").toLowerCase() === "ongoing"
+    );
+
     rebuildGenreFilter(publicAnimeRows);
-    if (!publicAnimeRows.length) {
-      animeList.innerHTML = '<p class="empty">Belum ada anime ongoing yang dipublikasikan. Periksa status dan publikasi anime di dashboard admin.</p>';
-    } else {
-      renderAnimeCatalog(publicAnimeRows);
-    }
-    renderHotAnime(publicAnimeRows);
+    renderAnimeCatalog(publicAnimeRows);
+    renderHotAnime(publishedAnimeRows);
+    console.log(`AniStream katalog: ${publishedAnimeRows.length} anime terpublikasi, ${publicAnimeRows.length} anime ongoing.`);
   } catch (error) {
     console.error("Gagal memuat katalog anime:", error.message || error);
-    animeList.innerHTML = '<p class="empty">Katalog gagal dimuat. Periksa koneksi dan kebijakan baca tabel anime di Supabase.</p>';
-    if (hotAnimeList) hotAnimeList.innerHTML = '<p class="empty">Hot Anime gagal dimuat.</p>';
+    const message = 'Katalog gagal dimuat. Periksa kebijakan SELECT tabel anime di Supabase.';
+    animeList.innerHTML = `<p class="empty">${message}</p>`;
+    if (hotAnimeList) hotAnimeList.innerHTML = `<p class="empty">${message}</p>`;
   }
 }
 
 if (genreFilter) genreFilter.addEventListener("change", () => renderAnimeCatalog(publicAnimeRows));
 document.addEventListener("DOMContentLoaded", loadAnimeCatalog);
-
-
-/* ===== HOT ANIME ===== */
-const hotAnimeList = document.getElementById("hot-anime-list");
-
-function renderHotAnime(rows) {
-  if (!hotAnimeList) return;
-  const hotRows = [...rows].sort((a, b) => {
-    const ratingA = Number(a.rating) || 0;
-    const ratingB = Number(b.rating) || 0;
-    return ratingB - ratingA;
-  }).slice(0, 6);
-
-  if (!hotRows.length) {
-    hotAnimeList.innerHTML = '<p class="empty">Belum ada anime untuk ditampilkan.</p>';
-    return;
-  }
-
-  hotAnimeList.innerHTML = hotRows.map(a => {
-    const title = a.title_english || "Tanpa judul";
-    const poster = a.thumbnail_path
-      ? `<img class="poster" src="${catalogSafeText(a.thumbnail_path)}" alt="Poster ${catalogSafeText(title)}" loading="lazy">`
-      : '<div class="poster"><span class="poster-symbol">星</span></div>';
-    const rating = a.rating == null ? "Belum ada rating" : `Rating: ${catalogSafeText(a.rating)}/10`;
-    return `<article class="anime-card" data-title="${catalogSafeText(title)}">
-      ${poster}<h3>${catalogSafeText(title)}</h3><p>${rating}</p>
-    </article>`;
-  }).join("");
-}
-
-// Wrap catalog rendering so the hot list also refreshes when data loads.
-const originalRenderAnimeCatalog = renderAnimeCatalog;
-renderAnimeCatalog = function(rows) {
-  originalRenderAnimeCatalog(rows);
-  renderHotAnime(publicAnimeRows);
-};
